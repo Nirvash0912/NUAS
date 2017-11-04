@@ -1,2 +1,2 @@
 # Northwestern-Academic-System
-Course work
+This the course work of 495 Intro to database, proj 2
