@@ -20,4 +20,5 @@ int main (int argc, const char* argv[]) {
     } else {
         printf("You are now connected. Welcome!\n");
     }
+    printf("Hi");
 }
