@@ -44,6 +44,8 @@ int enrollScreen();
 int withdrawScreen();
 int personalDetail();
 int courseDetail();
+void updatePasswork();
+void updateAddress();
 
 int main (int argc, const char* argv[]) {
     init();
@@ -101,21 +103,21 @@ void init() {
     // print welcome info
     printWelcome();
     mysql_init(&mysql);
-    connection = mysql_real_connect(&mysql, "localhost", "root", "3604818", "project3-nudb", 3306, NULL, CLIENT_MULTI_RESULTS);
+    connection = mysql_real_connect(&mysql, "localhost", "root", "123456", "project3-nudb", 3306, NULL, CLIENT_MULTI_RESULTS);
     if (connection == NULL) {
         // unable to connect
         cout << "Fatal Error: Failed to conncet to DB. Error Number:" << mysql_errno(connection) << ": " << mysql_error(connection) << endl;
         exit(1);
     }
     cout << "Connection Built." << endl;
-    cout << "==============================================================================================================" << endl << endl;
+    cout << "=====================================================================================================" << endl << endl;
     getDate();
 }
 
 void printWelcome() {
-    cout << "==============================================================================================================" << endl;
+    cout << "=====================================================================================================" << endl;
     cout << "				Welcome to Northwestern Caesar Academic System!" << endl;
-    cout << "==============================================================================================================" << endl;
+    cout << "=====================================================================================================" << endl;
     cout << "System initializing." << endl;
     cout << "Connecting to database." << endl;
 }
@@ -201,7 +203,8 @@ int login() {
                     
                     if (user.password.compare(row[2]) != 0) {
                         cout << "->Warning: Wrong password!" << endl;
-                        cout << "  [1]Retry		[0]Exit" << endl;;
+                        cout << "  [1]Retry" << endl;
+                        cout << "  [0]Exit" << endl;
                         int cmd = getCommand();
                         if (cmd == 1) {
                             continue;
@@ -230,7 +233,7 @@ void printMenu() {
     
     cout << "			Courses in " << "Academic Year: " << dt.year << ", Semester: " << dt.quarter << endl;
     cout << "  ----------------------------------------------------------------------------------------------------------" << endl;
-    cout << "  |			Course ID			|			Course Name		    |" << endl;
+    cout << "   			Course ID			 			Course Name" << endl;
     cout << "  ----------------------------------------------------------------------------------------------------------" << endl;
     
     MYSQL_RES *res_set;
@@ -275,7 +278,7 @@ int transciptScreen() {
         cout << "	----------------------------------------------------------------------------------------------" << endl;
         cout << "					Transcript of Student: " << user.id << endl;
         cout << "	----------------------------------------------------------------------------------------------" << endl;
-        cout << "	|Course Id			|Semester	|Year			|Grade		     |" << endl;
+        cout << "	 Course Id			 Semester	 Year			 Grade" << endl;
         cout << "	----------------------------------------------------------------------------------------------" << endl;
         res_set = mysql_store_result(connection);
         int numrows = (int) mysql_num_rows(res_set);
@@ -301,23 +304,85 @@ int transciptScreen() {
     }
     mysql_free_result(res_set);
     
-    cout << "->Operations:" << endl;
-    cout << "    [1] Course Detail" << endl;
-    cout << "    [0] Return to Student Menu" << endl;
-
     while (true) {
+        cout << "->Operations:" << endl;
+        cout << "    [1] Course Detail" << endl;
+        cout << "    [0] Return to Student Menu" << endl;
+
         int cmd = getCommand();
         if (cmd == 1) {
             courseDetail();
-        } else {
+        } else if (cmd == 0) {
             break;
         }
     }
-    
     return 0;
 }
 
 int courseDetail() {
+    MYSQL_RES *res_set;
+    MYSQL_ROW row;
+    
+    string courseId;
+    
+    char courseQuery[500];
+    
+    while (true) {
+        cout << "->Please enter a course ID: ";
+        cin >> courseId;
+        
+        sprintf(courseQuery, "select T.UoSCode as CourseID,US.UoSName as CourseName,T.Semester as Semester,T.Year as Year,UO.Enrollment as StudentEnrollment,UO.MaxEnrollment as MaxStudentEnrollment, F.Name as InstructerName, T.Grade as Grade from transcript T, unitofstudy US, uosoffering UO, faculty F where T.UoSCode = US.UoSCode and UO.UoSCode = T.UoSCode and F.Id = UO.InstructorId and T.Year = UO.Year and T.Semester = UO.Semester and StudId = %d and T.UoSCode = \'%s\'; ", user.id, courseId.c_str());
+        
+        if (mysql_query(connection, courseQuery) == 0) {
+            res_set = mysql_store_result(connection);
+            int numrows = (int) mysql_num_rows(res_set);
+            
+            if (numrows < 1) {
+                cout << "->Can't find course with ID does not exist.\n";
+                cout << "    [1] Retry" << endl;
+                cout << "    [0] Exit" << endl;
+                mysql_free_result(res_set);
+                
+                int cmd = getCommand();
+                
+                if (cmd == 1) {
+                    continue;
+                } else if (cmd == 0) {
+                    return 0;
+                }
+            } else {
+                for (int i = 0; i < numrows; i++) {
+                    row = mysql_fetch_row(res_set);
+                    if (row != NULL) {
+                        cout << "			------------------------------------------------------" << endl;
+                        cout << "				   COURSE DETAIL OF COURSE " << courseId << endl;
+                        cout << "			------------------------------------------------------" << endl;
+                        
+                        
+                        cout << "				Course Id: " << row[0] << endl;
+                        cout << "				Course Name: " << row[1] << endl;
+                        cout << "				Semester: " << row[2] << endl;
+                        cout << "				Year: " << row[3] << endl;
+                        cout << "				Student Enrolled in this class: " << row[4] << endl;
+                        cout << "				Maximum Enrollment: " <<row[5] << endl;
+                        cout << "				Instructer Name: " << row[6] << endl;
+                        if (row[7] == NULL) {
+                            cout << "				Grade: " << "NULL" << endl;
+                        }
+                        else {
+                            cout << "				Grade: " << row[7] << endl;
+                        }
+                        cout << endl;
+                    }
+                }
+                break;
+            }
+        }
+    }
+    
+    mysql_free_result(res_set);
+    
+    cout << endl;
     return 0;
 }
 
@@ -330,5 +395,86 @@ int withdrawScreen() {
 }
 
 int personalDetail() {
+    MYSQL_RES *res_set;
+    MYSQL_ROW row;
+    
+    char personQuery[200];
+    sprintf(personQuery, "select Id, Name, Password, Address from student where Id = %d; ", user.id);
+    if (mysql_query(connection, personQuery) == 0) {
+        res_set = mysql_store_result(connection);
+        int numrows = (int)mysql_num_rows(res_set);
+        
+        for (int i = 0; i < numrows; i++) {
+            cout << "			------------------------------------------------------" << endl;
+            cout << "					PERSONAL DETAIL PAGE OF " << user.id << endl;
+            cout << "			------------------------------------------------------" << endl;
+            row = mysql_fetch_row(res_set);
+            cout << "				Id: " << row[0] << endl;
+            cout << "				Name: " << row[1] << endl;
+            cout << "				Password: " << row[2] << endl;
+            cout << "				Address: " << row[3] << endl;
+        }
+    }
+    mysql_free_result(res_set);
+    cout << endl;
+    
+    while (true) {
+        bool isExit = false;
+        cout << "->Operations:" << endl;
+        cout << "    [1] Change password" << endl;
+        cout << "    [2] Change Address" << endl;
+        cout << "    [0] Exit" << endl;
+        
+        int cmd = getCommand();
+        switch (cmd) {
+            case 1:
+                updatePasswork();
+                break;
+            case 2:
+                updateAddress();
+                break;
+            case 0:
+                isExit = true;
+                break;
+        }
+        if (isExit)
+            break;
+    }
+    
     return 0;
+}
+
+void updatePasswork () {
+    string  newPass, reEnterPass;
+    while (true) {
+        cout << "->Please enter new passward: ";
+        cin >> newPass;
+        cout << "->Please re-enter your new password: ";
+        cin >> reEnterPass;
+        
+        if (newPass.compare(reEnterPass) != 0) {
+            cout << "Two inputs are not same please try again." << endl << endl;
+            continue;
+        } else {
+            break;
+        }
+    }
+    
+    char updateQuery[200];
+    sprintf(updateQuery, "update student set Password = \"%s\" where Id = %d; ", newPass.c_str(), user.id);
+    if (mysql_query(connection, updateQuery) != 0) {
+        cout << "->Error: Query failed. Error Number:" << mysql_errno(connection) << ": " << mysql_error(connection) << endl;
+    }
+}
+
+void updateAddress () {
+    string newAddr;
+    cout << "->Please enter new address: ";
+    cin >> newAddr;
+    
+    char updateQuery[200];
+    sprintf(updateQuery, "update student set Address = \"%s\" where Id = %d; ", newAddr.c_str(), user.id);
+    if (mysql_query(connection, updateQuery) != 0) {
+        cout << "->Error: Update failed. Error Number:" << mysql_errno(connection) << ": " << mysql_error(connection) << endl;
+    }
 }
