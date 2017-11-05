@@ -1,0 +1,11 @@
+
+
+
+
+c.maxenrollment and c.uoscode = '<entered_course_id>' and c.uoscode in (select r.uoscode from requires as r where r.prerequoscode in (select t.uoscode from transcript as t where t.studid = '<entered_studid>' and t.grade = 'P'));
+
+select c.uoscode from uosoffering as c where c.enrollment < c.maxenrollment and c.uoscode = 'INFO2120' and c.uoscode in (select r.uoscode from requires as r where r.prerequoscode in (select t.uoscode from transcript as t where t.studid = '5123' and t.grade = 'P')) group by c.uoscode;
+
+
+insert into transcript
+values ('5123','INFO2120',<year>,<semester>,'null');
