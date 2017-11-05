@@ -2,7 +2,7 @@
 
 //use procedure
 
-create procedure select_course (IN coursecode char(8), IN StudentId int(11), IN year int(11), IN semester char(2)) 
+create procedure enroll_course (IN coursecode char(8), IN StudentId int(11), IN year int(11), IN semester char(2)) 
 Begin 
 
 declare status int default 0;
