@@ -22,6 +22,7 @@ update uosoffering set enrollment = enrollment+1 where uoscode = coursecode;
 
 select message;
 
+end if;
 
 End
 
