@@ -25,7 +25,7 @@ struct dataTime {
     int year;
     string quarter;
     string nextQuarter;
-    string nextQuarterYear;
+    int nextQuarterYear;
 } dt;
 
 struct studentInfo {
@@ -46,6 +46,7 @@ int personalDetail();
 int courseDetail();
 void updatePasswork();
 void updateAddress();
+string getValidCourses();
 
 int main (int argc, const char* argv[]) {
     init();
@@ -156,7 +157,6 @@ void getDate() {
 }
 
 int getCommand() {
-    cout << endl;
     cout << "->Please Enter a command number: ";
     int option;
     cin >> option;
@@ -233,7 +233,9 @@ void printMenu() {
     
     cout << "			Courses in " << "Academic Year: " << dt.year << ", Semester: " << dt.quarter << endl;
     cout << "  ----------------------------------------------------------------------------------------------------------" << endl;
-    cout << "   			Course ID			 			Course Name" << endl;
+    cout << left << "     "
+         << setw(8) << "CourseID" << "   "
+         << setw(40) << "CourseName" << "   " << endl;
     cout << "  ----------------------------------------------------------------------------------------------------------" << endl;
     
     MYSQL_RES *res_set;
@@ -250,7 +252,9 @@ void printMenu() {
         for (int i = 0; i < numrows; i++) {
             row = mysql_fetch_row(res_set);
             if (row != NULL) {
-                cout << "			"<< row[0] << "			   " << row[1]<< endl;
+                cout << "     " << left
+                     << setw(8) << row[0] << "   "
+                     << setw(8) << row[1] << "   " << endl;
             }
         }
     }
@@ -278,21 +282,24 @@ int transciptScreen() {
         cout << "	----------------------------------------------------------------------------------------------" << endl;
         cout << "					Transcript of Student: " << user.id << endl;
         cout << "	----------------------------------------------------------------------------------------------" << endl;
-        cout << "	 Course Id			 Semester	 Year			 Grade" << endl;
+        cout << "     " << left
+             << setw(8) << "CourseId" << "   "
+             << setw(8) << "Semester" << "   "
+             << setw(8) << "Year" << "   "
+             << setw(8) << "Grade" << "   " << endl;
         cout << "	----------------------------------------------------------------------------------------------" << endl;
         res_set = mysql_store_result(connection);
         int numrows = (int) mysql_num_rows(res_set);
         int numcol = (int) mysql_num_fields(res_set);
         for (int i = 0; i < numrows; i++) {
-            cout << "		";
+            cout << "     " << left;
             row = mysql_fetch_row(res_set);
             if (row != NULL) {
                 for (int j = 0; j < numcol; j++) {
-                    if (row[j] == NULL) {
-                        cout << "NULL" << "       		";
-                    }
+                    if (row[j] == NULL)
+                        cout << setw(8) << "NULL" << "   ";
                     else
-                        cout << row[j] << "       		";
+                        cout << setw(8) << row[j] << "   ";
                 }
             }
             cout << endl;
@@ -331,7 +338,7 @@ int courseDetail() {
         cout << "->Please enter a course ID: ";
         cin >> courseId;
         
-        sprintf(courseQuery, "select T.UoSCode as CourseID,US.UoSName as CourseName,T.Semester as Semester,T.Year as Year,UO.Enrollment as StudentEnrollment,UO.MaxEnrollment as MaxStudentEnrollment, F.Name as InstructerName, T.Grade as Grade from transcript T, unitofstudy US, uosoffering UO, faculty F where T.UoSCode = US.UoSCode and UO.UoSCode = T.UoSCode and F.Id = UO.InstructorId and T.Year = UO.Year and T.Semester = UO.Semester and StudId = %d and T.UoSCode = \'%s\'; ", user.id, courseId.c_str());
+        sprintf(courseQuery, "select T.UoSCode as CourseID,US.UoSName as CourseName,T.Semester as Semester,T.Year as Year,UO.Enrollment as StudentEnrollment, UO.MaxEnrollment as MaxStudentEnrollment, F.Name as InstructerName, T.Grade as Grade from transcript T, unitofstudy US, uosoffering UO, faculty F where T.UoSCode = US.UoSCode and UO.UoSCode = T.UoSCode and F.Id = UO.InstructorId and T.Year = UO.Year and T.Semester = UO.Semester and StudId = %d and T.UoSCode = \'%s\'; ", user.id, courseId.c_str());
         
         if (mysql_query(connection, courseQuery) == 0) {
             res_set = mysql_store_result(connection);
@@ -386,11 +393,331 @@ int courseDetail() {
     return 0;
 }
 
+vector<MYSQL_ROW> printValidCourses() {
+    MYSQL_RES *res_set;
+    MYSQL_ROW row;
+    
+    vector<MYSQL_ROW> validCourses;
+    
+    char courseQuery[500];
+    sprintf(courseQuery, "select UoSCode,UoSName,Year,Semester from uosoffering natural join unitofstudy natural join lecture natural join classroom where(Year = %d and Semester = \"%s\") or (Year = %d and Semester = \"%s\"); ",dt.year, dt.quarter.c_str(), dt.nextQuarterYear, dt.nextQuarter.c_str());
+    
+    // for test
+//    sprintf(courseQuery, "select UoSCode,UoSName,Year,Semester from uosoffering natural join unitofstudy natural join lecture natural join classroom where(Year = %d and Semester = \"%s\") or (Year = %d and Semester = \"%s\"); ",2015, "Q1", 2016, "Q2");
+    
+    if (mysql_query(connection, courseQuery) == 0) {
+        cout << "			Valid Courses For Student " << user.id << " in " << dt.year << " " << dt.quarter << " or in " << dt.nextQuarterYear << " " << dt.nextQuarter << endl;
+        cout << "	----------------------------------------------------------------------------------------------" << endl;
+        cout << "     " << left
+             << setw(8) << "Option"
+             << setw(8)	<<"CourseID" << "   "
+             << setw(40) << "CourseName" << "   "
+             << setw(8) << "Year" << "   "
+             << setw(8) << "Semester" << endl;
+        cout << "	----------------------------------------------------------------------------------------------" << endl;
+        res_set = mysql_store_result(connection);
+        int numrows = (int) mysql_num_rows(res_set);
+        int numcol = (int) mysql_num_fields(res_set);
+        for (int i = 0; i < numrows; i++) {
+            cout << "     ";
+            row = mysql_fetch_row(res_set);
+            validCourses.push_back(row);
+            cout << left << setw(8) << "[" + to_string(i + 1) +"]";
+            if (row != NULL) {
+                for (int j = 0; j < numcol; j++) {
+                    if (j == 1) {
+                        if (row[j] == NULL)
+                            cout << setw(40) << "NULL" << "   ";
+                        else
+                            cout << setw(40) << row[j] << "   ";
+                    } else {
+                        if (row[j] == NULL)
+                            cout << setw(8) << "NULL" << "   ";
+                        else
+                            cout << setw(8) << row[j] << "   ";
+                    }
+                }
+            }
+            cout << endl;
+        }
+        mysql_free_result(res_set);
+    }
+    else {
+        cout << "->Error :Course list query Failed. Error Number:"<< mysql_errno(connection) << ": " << mysql_error(connection) << endl;
+    }
+    cout << "	----------------------------------------------------------------------------------------------" << endl << endl;
+    
+    return validCourses;
+}
+
 int enrollScreen() {
+    MYSQL_RES *res_set;
+    MYSQL_ROW row;
+    
+    vector<MYSQL_ROW> validCourses = printValidCourses();
+    
+    if (validCourses.size() == 0) {
+        cout << "->No valid course found!" << endl;
+        cout << "->Operations:" << endl;
+        cout << "    [0] Return to Student Menu" << endl;
+        
+        while (true) {
+            int cmd = getCommand();
+            if (cmd == 0) {
+                return 0;
+            }
+        }
+    }
+    
+    int selection;
+    while (true) {
+        cout << "->Please enter the option number to enroll (Enter 0 to Exit): ";
+        cin >> selection;
+        
+        if (selection == 0) {
+            return 0;
+        } else if (selection > validCourses.size()){
+            cout << "->Invalid option number, please retry!";
+            continue;
+        } else {
+            selection --;
+            break;
+        }
+    }
+    
+    string courseId = validCourses[selection][0];
+    string courseYear = validCourses[selection][1];
+    string courseSemester = validCourses[selection][2];
+    
+    char query_call_enroll[150];
+    
+    sprintf(query_call_enroll, "call enrollCourse(\"%s\", %d, \"%s\", \"%s\");", courseId.c_str(), user.id, courseYear.c_str(), courseSemester.c_str());
+    
+    res_set = NULL;
+    if (mysql_query(connection, query_call_enroll) == 0) {
+        do {
+            if (mysql_field_count(connection) > 0) {
+                res_set = mysql_store_result(connection);
+                mysql_free_result(res_set);
+            }
+        } while (mysql_next_result(connection) == 0);
+    
+        row = mysql_fetch_row(res_set);
+        
+        int message = 10;
+        if (row[0] != NULL) {
+            message = atoi(row[0]);
+            if (message == 0) {
+                cout << "  The student is already enrolled in this class.\n";
+            }
+            else if (message == 1) {
+                cout << "  Oops! The course is already full.\n";
+            }
+            else if (message == 2 || message == 3) {
+                cout << "  The student`s preference is not satisfied.\n";
+            }
+            else if (message == 4) {
+                cout << " The prerequiste are not satisfied.\n";
+            }
+            else if (message == 6) {
+                cout << "  You entered the wrong course!\n";
+            }
+            else if(message == 5){
+                cout << "  Congratulation! Enrollment succeed!\n";
+            }
+            //mysql_free_result(res_set);
+        }
+        if (message == 4) {
+            cout << "  The following courses are either failed or not taken:  ";
+            
+            if (mysql_query(connection, "select distinct PreId from preCourse;") == 0) {
+                res_set = mysql_store_result(connection);
+                int numrows = (int)mysql_num_rows(res_set);
+                for (int i = 0; i < numrows; i++) {
+                    row = mysql_fetch_row(res_set);
+                    cout << row[0] << "   ";
+                }
+                cout << endl;
+            }
+            else {
+                cout << "Something wrong\n";
+            }
+            mysql_free_result(res_set);
+            if (mysql_query(connection, "delete from preCourse;") == 0) {
+                //cout << "  Clean preCourse table\n";
+            }
+            else {
+                cout << "Something wrong\n";
+            }
+            //mysql_free_result(res_set);
+        }
+        else if (message == 5) {
+            //cout << "Check for warning\n";
+            if (mysql_query(connection, "select * from warning;") == 0) {
+                res_set = mysql_store_result(connection);
+                int numrows = (int)mysql_num_rows(res_set);
+                row = mysql_fetch_row(res_set);
+                if (numrows == 0) {
+                    //cout << "No warning generated\n";
+                }
+                else if (row[0] != NULL) {
+                    cout << atoi(row[0]) << endl;
+                    //cout << "Warning generated if is 1\n";
+                    if (atoi(row[0]) == 1) {
+                        cout << "  WARNING: student number enrolled in course are lower than 50% of Max Enrollment!\n";
+                    }
+                }
+            }
+            else {
+                cout << "There is something wrong with the warning\n";
+                printf("error %u: %s\n", mysql_errno(connection), mysql_error(connection));
+            }
+            //mysql_free_result(res_set);
+        }
+        
+    }
     return 0;
 }
 
 int withdrawScreen() {
+    MYSQL_RES *res_set;
+    MYSQL_ROW row;
+    
+    vector<MYSQL_ROW> enrolledCourses;
+    
+    char courseQuery[300];
+    sprintf(courseQuery, "select UoSCode, UoSName, Semester, Year from transcript natural join unitofstudy where StudId = %d; ", user.id);
+    if (mysql_query(connection, courseQuery) == 0) {
+        cout << "					Enrolled Course List of Student " << user.id << endl;
+        cout << "	----------------------------------------------------------------------------------------------" << endl;
+        cout << "     " << left
+             << setw(8) << "Option" << "   "
+             << setw(8)	<<"CourseID" << "   "
+             << setw(40) << "CourseName" << "   "
+             << setw(8) << "Year" << "   "
+             << setw(8) << "Semester" << endl;
+        cout << "	----------------------------------------------------------------------------------------------" << endl;
+        res_set = mysql_store_result(connection);
+        int numrows = (int) mysql_num_rows(res_set);
+        int numcol = (int) mysql_num_fields(res_set);
+        
+        for (int i = 0; i < numrows; i ++) {
+            cout << "     ";
+            row = mysql_fetch_row(res_set);
+            enrolledCourses.push_back(row);
+            cout << left << setw(8) << "[" + to_string(i + 1) +"]";
+            for (int j = 0; j < numcol; j ++) {
+                if (j == 1) {
+                    if (row[j] == NULL)
+                        cout << setw(40) << "NULL" << "   ";
+                    else
+                        cout << setw(40) << row[j] << "   ";
+                }
+                else {
+                    if (row[j] == NULL)
+                        cout << setw(8) << "NULL" << "   ";
+                    else
+                        cout << setw(8) << row[j] << "   ";
+                }
+            }
+            cout << endl;
+        }
+    }
+    cout << "	----------------------------------------------------------------------------------------------" << endl;
+    mysql_free_result(res_set);
+    
+    int selection;
+    while (true) {
+        cout << "->Please enter the option number to withdraw (Enter 0 to Exit): ";
+        cin >> selection;
+        
+        if (selection == 0) {
+            return 0;
+        } else if (selection > enrolledCourses.size()){
+            cout << "->Invalid option number, please retry!";
+            continue;
+        } else {
+            selection --;
+            break;
+        }
+    }
+    
+    string courseId = enrolledCourses[selection][0];
+    string courseYear = enrolledCourses[selection][2];
+    string courseSemester = enrolledCourses[selection][3];
+    
+    char withdrawQuery[150];
+    sprintf(withdrawQuery, "call withdrawCourse(\"%s\", %d, \"%s\", \"%s\");", courseId.c_str(), user.id, courseYear.c_str(), courseSemester.c_str());
+    
+    if (mysql_query(connection, withdrawQuery) == 0) {
+        do {
+            if (mysql_field_count(connection) > 0) {
+                res_set = mysql_store_result(connection);
+                mysql_free_result(res_set);
+            }
+        } while (mysql_next_result(connection) == 0);
+    }
+    row = mysql_fetch_row(res_set);
+    //cout << row[0] << endl;
+    int message = 100;
+    
+    if (row[0] == NULL) {
+        cout << "The withdraw procedure is wrong\n";
+    }
+    else {
+        message = atoi(row[0]);
+        if (message == 0) {
+            cout << "Withdraw successfull!!\n" << endl;
+            //cout << "Check for low enrollment\n";
+        }
+        else if (message == 1) {
+            cout << "Course code not in transcript\n";
+        }
+        else if (message == 2) {
+            cout << "The course is already finished\n";
+        }
+        else if (message == 3) {
+            cout << "  Wrong course!\n";
+        }
+    }
+    //mysql_free_result(res_set);
+    if (message == 0) {
+        //cout << "Check for warning\n";
+        if (mysql_query(connection, "select warning from warning;") == 0) {
+            res_set = mysql_store_result(connection);
+            int numrows = (int)mysql_num_rows(res_set);
+            row = mysql_fetch_row(res_set);
+            if (numrows == 0) {
+                //cout << "No warning generated\n";
+            }
+            else if (row[0] != NULL) {
+                //cout << atoi(row[0]) << endl;
+                //cout << "Warning generated if is 1\n";
+                if (atoi(row[0]) == 1) {
+                    cout << "  WARNING: student number enrolled in course are lower than 50% of Max Enrollment!\n";
+                }
+            }
+        }
+        else {
+            cout << "There is something wrong with the warning\n";
+            printf("error %u: %s\n", mysql_errno(connection), mysql_error(connection));
+        }
+        //mysql_free_result(res_set);
+    }
+    
+    int ret = 1;
+    while (ret != 0) {
+        cout << "  Press 0 to return to student menu: ";
+        cin >> ret;
+        while (cin.fail())
+        {
+            cin.clear(); 
+            cin.ignore(INT_MAX, '\n'); 
+            cout << "  ATTENTION: You can only enter numbers.\n";
+            cout << "  Press 0 to return to student menu: ";
+            cin >> ret;
+        }
+    }
     return 0;
 }
 
