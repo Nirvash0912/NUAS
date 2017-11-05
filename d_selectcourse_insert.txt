@@ -28,10 +28,38 @@ end if;
 End
 
 
-
 //e
+create procedure withdraw_course (IN coursecode char(8), IN studentId int(11))
+begin
+declare status int default 0;
+
+start transaction;
+
+//course_not_enrolled
+if coursecode not in (select t.uoscode from transcript as t where t.studid = studentId) then set status = 1;
 
 
+//course_with_grade
+elseif coursecode in (select t.uoscode from transcript as t where t.studid = studentId and t.grade is null) then set status = 2;
+
+else
+set status = 3;
+delete from transcript where studid = studentId and uoscode = coursecode;
+update uosoffering set enrollment = enrollment-1 where uoscode = coursecode;
+
+
+select status;
+
+end if;
+
+end
+
+
+
+//trigger_nonehalf
+declare warning int default 0; /*Is it ok to create a new variable here?*/
+
+create trigger nonehalf_MaxEnrollment After update of Enrollment on uosoffering for each row begin if new.enrollment<old.Maxenrollment set warning = 1; end if; end
 
 
 
