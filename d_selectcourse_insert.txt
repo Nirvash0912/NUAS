@@ -9,18 +9,19 @@ declare status int default 0;
 
 start transaction;
 //Max_enrollment
-if coursecode in (select c.uoscode from uosoffering as c where c.enrollment >= c.maxenrollment) then set message = 1;
+if coursecode in (select c.uoscode from uosoffering as c where c.enrollment >= c.maxenrollment) then set status = 1;
 
 
 //prerequiste
-elseif coursecode not in (select r.uoscode from requires as r where r.prerequoscode in (select t.uoscode from transcript as t where t.studid =StudentId and t.grade = 'P')) then set message = 2; select uoscode,uosname from unitofstudy where uoscode in (select r.prereqUosCode from requires as r where r.uoscode = coursecode); 
+elseif coursecode not in (select r.uoscode from requires as r where r.prerequoscode in (select t.uoscode from transcript as t where t.studid =StudentId and t.grade = 'P')) then set status = 2; 
+select uoscode,uosname from unitofstudy where uoscode in (select r.prereqUosCode from requires as r where r.uoscode = coursecode); 
 
 else
-set message = 3;
+set status = 3;
 Insert into transcript values (StudentID,courseCode,year,semester,'null');
 update uosoffering set enrollment = enrollment+1 where uoscode = coursecode; 
 
-select message;
+select status;
 
 end if;
 
