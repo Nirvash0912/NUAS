@@ -18,7 +18,7 @@ select uoscode,uosname from unitofstudy where uoscode in (select r.prereqUosCode
 
 else
 set status = 3;
-Insert into transcript values (StudentID,courseCode,courseyear,coursesemester,'null');
+Insert into transcript values (StudentID,courseCode,coursesemester,courseyear,null);
 update uosoffering set enrollment = enrollment+1 where uoscode = coursecode and year = courseyear and semester = coursesemester; 
 
 select status;
