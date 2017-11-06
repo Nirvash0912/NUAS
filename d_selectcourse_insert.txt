@@ -2,7 +2,7 @@
 
 //use procedure
 delimiter $$
-DROP PROCEDURE IF EXISTS 'enroll_course'$$
+DROP PROCEDURE IF EXISTS enroll_course$$
 create procedure enroll_course (IN coursecode char(8), IN StudentId int(11), IN courseyear int(11), IN coursesemester char(2)) 
 Begin 
 
@@ -36,7 +36,7 @@ delimiter ;
 //e
 
 delimiter $$
-DROP PROCEDURE IF EXISTS 'withdraw_course'$$
+DROP PROCEDURE IF EXISTS withdraw_course$$
 create procedure withdraw_course (IN coursecode char(8), IN studentId int(11))
 begin
 declare status int default 0;
@@ -65,6 +65,7 @@ delimiter ;
 
 
 delimiter $$
+DROP trigger IF EXISTS half_MaxEnrollment$$
 create trigger half_MaxEnrollment After update of Enrollment on uosoffering for each row 
 begin
 declare warning int default 0; 
