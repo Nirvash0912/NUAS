@@ -2,7 +2,7 @@
 
 //use procedure
 delimiter $$
-create procedure enroll_course (IN coursecode char(8), IN StudentId int(11), IN year int(11), IN semester char(2)) 
+create procedure enroll_course (IN coursecode char(8), IN StudentId int(11), IN courseyear int(11), IN coursesemester char(2)) 
 Begin 
 
 declare status int default 0;
@@ -18,8 +18,8 @@ select uoscode,uosname from unitofstudy where uoscode in (select r.prereqUosCode
 
 else
 set status = 3;
-Insert into transcript values (StudentID,courseCode,year,semester,'null');
-update uosoffering set enrollment = enrollment+1 where uoscode = coursecode; 
+Insert into transcript values (StudentID,courseCode,courseyear,coursesemester,'null');
+update uosoffering set enrollment = enrollment+1 where uoscode = coursecode and year = courseyear and semester = coursesemester; 
 
 select status;
 
