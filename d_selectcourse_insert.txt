@@ -16,8 +16,11 @@ if coursecode in (select c.uoscode from uosoffering as c where c.enrollment >= c
 elseif coursecode not in (select r.uoscode from requires as r where r.prerequoscode in (select t.uoscode from transcript as t where t.studid =StudentId and t.grade = 'P')) then set status = 2; 
 select uoscode,uosname from unitofstudy where uoscode in (select r.prereqUosCode from requires as r where r.uoscode = coursecode); 
 
+//course_exists
+elseif coursecode in (select t.uoscode from transcript as t where t.studid = StudentId) then set status = 3;
+
 else
-set status = 3;
+set status = 4;
 Insert into transcript values (StudentID,courseCode,coursesemester,courseyear,null);
 update uosoffering set enrollment = enrollment+1 where uoscode = coursecode and year = courseyear and semester = coursesemester; 
 
