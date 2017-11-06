@@ -63,7 +63,7 @@ delimiter $$
 create trigger half_MaxEnrollment After update of Enrollment on uosoffering for each row 
 begin
 declare warning int default 0; 
-if new.enrollment<old.Maxenrollment set warning = 1; 
+if new.enrollment<0.5*old.Maxenrollment set warning = 1; 
 end if;
 select warning;
 end $$
