@@ -2,6 +2,7 @@
 
 //use procedure
 delimiter $$
+DROP PROCEDURE IF EXISTS 'enroll_course'$$
 create procedure enroll_course (IN coursecode char(8), IN StudentId int(11), IN courseyear int(11), IN coursesemester char(2)) 
 Begin 
 
@@ -13,7 +14,7 @@ if coursecode in (select c.uoscode from uosoffering as c where c.enrollment >= c
 
 
 //prerequiste
-elseif coursecode not in (select r.uoscode from requires as r where r.prerequoscode in (select t.uoscode from transcript as t where t.studid =StudentId and t.grade = 'P')) then set status = 2; 
+elseif coursecode not in (select r.uoscode from requires as r where r.prerequoscode in (select t.uoscode from transcript as t where t.studid =StudentId and (t.grade = 'P' or t.grade = 'CR')) then set status = 2; 
 select uoscode,uosname from unitofstudy where uoscode in (select r.prereqUosCode from requires as r where r.uoscode = coursecode); 
 
 //course_exists
@@ -35,6 +36,7 @@ delimiter ;
 //e
 
 delimiter $$
+DROP PROCEDURE IF EXISTS 'withdraw_course'$$
 create procedure withdraw_course (IN coursecode char(8), IN studentId int(11))
 begin
 declare status int default 0;
