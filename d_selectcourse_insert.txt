@@ -14,7 +14,7 @@ if coursecode in (select c.uoscode from uosoffering as c where c.enrollment >= c
 
 
 //prerequiste
-elseif coursecode not in (select r.uoscode from requires as r where r.prerequoscode in (select t.uoscode from transcript as t where t.studid =StudentId and (t.grade = 'P' or t.grade = 'CR')) then set status = 2; 
+elseif coursecode not in (select r.uoscode from requires as r where r.prerequoscode in (select t.uoscode from transcript as t where t.studid =StudentId and (t.grade = 'P' or t.grade = 'CR'))) then set status = 2; 
 select uoscode,uosname from unitofstudy where uoscode in (select r.prereqUosCode from requires as r where r.uoscode = coursecode); 
 
 //course_exists
