@@ -10,11 +10,11 @@ BEGIN
 
     START TRANSACTION;
     SET error = 0;
+    SET status = 0;
 
 	# max_enrollment
 	IF coursecode IN (SELECT c.uoscode FROM uosoffering AS c WHERE c.enrollment >= c.maxenrollment)
 	THEN SET status = 1;
-		 SELECT status;
 
 	# prerequiste
 	-- ELSEIF coursecode NOT IN (SELECT r.uoscode FROM requires AS r WHERE r.prerequoscode IN (SELECT t.uoscode FROM transcript AS t WHERE t.studid = StudentId AND (t.grade = 'P' or t.grade = 'CR')))
@@ -22,20 +22,18 @@ BEGIN
 											AND (PrereqUoSCode NOT IN (SELECT UoSCode FROM transcript WHERE StudId = studentId)
                                                  OR PrereqUoSCode IN (SELECT UoSCode FROM transcript WHERE StudId = studentId AND Grade is NULL)
                                                  OR PrereqUoSCode IN (SELECT UoSCode FROM transcript WHERE StudId = studentId AND Grade = "D")))
+
 	THEN SET status = 2;
-		 SELECT status;
 
 	# course_exists
 	ELSEIF coursecode IN (SELECT t.uoscode FROM transcript AS t WHERE t.studid = StudentId)
 	THEN SET status = 3;
-		 SELECT status;
 
 	# success
 	ELSE
 		INSERT INTO transcript VALUES (StudentID, courseCode, coursesemester, courseyear, NULL);
 		UPDATE uosoffering SET enrollment = enrollment + 1 WHERE uoscode = coursecode AND year = courseyear AND semester = coursesemester;
 		SET status = 4;
-		SELECT status;
 	END IF;
 	
 
@@ -45,6 +43,7 @@ BEGIN
 		COMMIT;
 	END IF;
 	
+	SELECT status;
 End $$
 delimiter ;
 
@@ -61,23 +60,21 @@ BEGIN
 	
 	START TRANSACTION;
 	SET error = 0;
+	SET status = 0;
 
 	# course_not_enrolled
 	IF coursecode not IN (SELECT t.uoscode FROM transcript AS t WHERE t.studid = studentId)
 	THEN SET status = 1;
-		 SELECT status;
 
 	# course_with_grade
 	ELSEIF coursecode IN (SELECT t.uoscode FROM transcript AS t WHERE t.studid = studentId AND t.grade is NOT NULL)
 	THEN SET status = 2;
-		 SELECT status;
 
 	# success
 	ELSE
 		SET status = 3;
 		DELETE FROM transcript WHERE studid = studentId AND uoscode = coursecode;
 		UPDATE uosoffering SET enrollment = enrollment - 1 WHERE uoscode = coursecode;
-		SELECT status;
 	END IF;
 	
 	IF error = 1
@@ -86,6 +83,7 @@ BEGIN
 		COMMIT;
 	END IF;
 
+	SELECT status;
 END $$
 delimiter ;
 
@@ -99,7 +97,7 @@ CREATE TRIGGER half_MaxEnrollment AFTER UPDATE ON uosoffering FOR EACH ROW
 BEGIN
 	DECLARE warning INT DEFAULT 0;
 	IF new.enrollment< 0.5 * old.Maxenrollment THEN
-		INSERT INTO warning VALUES (1, NOW()); 
+		INSERT INTO warning_log VALUES (1, NOW()); 
 	ELSE
 		DELETE FROM warning_log;
 	END IF;
