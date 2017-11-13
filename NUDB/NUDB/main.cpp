@@ -116,14 +116,14 @@ void init() {
         exit(1);
     }
     cout << "Connection Built." << endl;
-    cout << "=====================================================================================================" << endl << endl;
+    cout << "==================================================================================================" << endl << endl;
     getDate();
 }
 
 void printWelcome() {
-    cout << "=====================================================================================================" << endl;
+    cout << "==================================================================================================" << endl;
     cout << "				Welcome to Northwestern Caesar Academic System!" << endl;
-    cout << "=====================================================================================================" << endl;
+    cout << "==================================================================================================" << endl;
     cout << "System initializing." << endl;
     cout << "Connecting to database." << endl;
 }
@@ -168,7 +168,7 @@ int getCommand() {
     while (cin.fail()) {
         cin.clear();
         cin.ignore(INT_MAX, '\n');
-        cout << "->Warning: You can only enter numbers, please retry.\n";
+        cout << "->Warning: You can only enter numbers, please retry." << endl << endl;
         cout << "->Please Enter a command number: ";
         cin >> option;
     }
@@ -231,18 +231,18 @@ int login() {
 
 void printMenu() {
     cout << endl;
-    cout << "==============================================================================================================" << endl;
+    cout << "===========================================================================================================" << endl;
     cout << "						Student Menu" << endl;
     cout << "                       Student ID: " << user.id << endl;
-    cout << "==============================================================================================================" << endl;
+    cout << "===========================================================================================================" << endl;
     
     
     cout << "			Courses in " << "Academic Year: " << dt.year << ", Semester: " << dt.quarter << endl;
-    cout << "  ----------------------------------------------------------------------------------------------------------" << endl;
+    cout << "  -------------------------------------------------------------------------------------------------------" << endl;
     cout << left << "     "
          << setw(8) << "CourseID" << "   "
          << setw(40) << "CourseName" << "   " << endl;
-    cout << "  ----------------------------------------------------------------------------------------------------------" << endl;
+    cout << "  -------------------------------------------------------------------------------------------------------" << endl;
     
     MYSQL_RES *res_set;
     MYSQL_ROW row;
@@ -285,15 +285,15 @@ int transciptScreen() {
     sprintf(transQuery, "select T.UosCode, T.Semester, T.Year, T.Grade from transcript T where T.studId = %d; ", user.id);
     
     if (mysql_query(connection, transQuery) == 0) {
-        cout << "	----------------------------------------------------------------------------------------------" << endl;
+        cout << "	----------------------------------------------------------------------------------------" << endl;
         cout << "					Transcript of Student: " << user.id << endl;
-        cout << "	----------------------------------------------------------------------------------------------" << endl;
+        cout << "	----------------------------------------------------------------------------------------" << endl;
         cout << "     " << left
              << setw(8) << "CourseId" << "   "
              << setw(8) << "Semester" << "   "
              << setw(8) << "Year" << "   "
              << setw(8) << "Grade" << "   " << endl;
-        cout << "	----------------------------------------------------------------------------------------------" << endl;
+        cout << "	----------------------------------------------------------------------------------------" << endl;
         res_set = mysql_store_result(connection);
         int numrows = (int) mysql_num_rows(res_set);
         int numcol = (int) mysql_num_fields(res_set);
@@ -310,7 +310,7 @@ int transciptScreen() {
             }
             cout << endl;
         }
-        cout << "	----------------------------------------------------------------------------------------------" << endl << endl;
+        cout << "	-------------------------------------------------------------------------------------------" << endl << endl;
     }
     else {
         cout << "->Error :Course list query Failed. Error Number:"<< mysql_errno(connection) << ": " << mysql_error(connection) << endl;
@@ -351,7 +351,7 @@ int courseDetail() {
             int numrows = (int) mysql_num_rows(res_set);
             
             if (numrows < 1) {
-                cout << "->Can't find course with ID does not exist.\n";
+                cout << "->Can't find course with ID: " << courseId << endl;
                 cout << "    [1] Retry" << endl;
                 cout << "    [0] Exit" << endl << endl;
                 mysql_free_result(res_set);
@@ -413,14 +413,14 @@ vector<MYSQL_ROW> printValidCourses() {
     
     if (mysql_query(connection, courseQuery) == 0) {
         cout << "			Valid Courses For Student " << user.id << " in " << dt.year << " " << dt.quarter << " or in " << dt.nextQuarterYear << " " << dt.nextQuarter << endl;
-        cout << "	----------------------------------------------------------------------------------------------" << endl;
+        cout << "	-------------------------------------------------------------------------------------------" << endl;
         cout << "     " << left
              << setw(8) << "Option"
              << setw(8)	<<"CourseID" << "   "
              << setw(40) << "CourseName" << "   "
              << setw(8) << "Year" << "   "
              << setw(8) << "Semester" << endl;
-        cout << "	----------------------------------------------------------------------------------------------" << endl;
+        cout << "	-------------------------------------------------------------------------------------------" << endl;
         res_set = mysql_store_result(connection);
         int numrows = (int) mysql_num_rows(res_set);
         int numcol = (int) mysql_num_fields(res_set);
@@ -446,7 +446,7 @@ vector<MYSQL_ROW> printValidCourses() {
             }
             cout << endl;
         }
-        cout << "	----------------------------------------------------------------------------------------------" << endl << endl;
+        cout << "	-------------------------------------------------------------------------------------------" << endl << endl;
         mysql_free_result(res_set);
     }
     else {
@@ -482,7 +482,7 @@ int enrollScreen() {
         if (selection == 0) {
             return 0;
         } else if (selection > validCourses.size()){
-            cout << "->Invalid option number, please retry!";
+            cout << "->Invalid option number, please retry!" << endl << endl;
             continue;
         } else {
             selection --;
@@ -577,14 +577,14 @@ vector<MYSQL_ROW> printEnrolledCourses() {
     sprintf(courseQuery, "select UoSCode, UoSName, Semester, Year from transcript natural join unitofstudy where StudId = %d; ", user.id);
     if (mysql_query(connection, courseQuery) == 0) {
         cout << "					Enrolled Course List of Student " << user.id << endl;
-        cout << "	----------------------------------------------------------------------------------------------" << endl;
+        cout << "	-------------------------------------------------------------------------------------------" << endl;
         cout << "     " << left
         << setw(8) << "Option" << "   "
         << setw(8)	<<"CourseID" << "   "
         << setw(40) << "CourseName" << "   "
         << setw(8) << "Year" << "   "
         << setw(8) << "Semester" << endl;
-        cout << "	----------------------------------------------------------------------------------------------" << endl;
+        cout << "	-------------------------------------------------------------------------------------------" << endl;
         res_set = mysql_store_result(connection);
         int numrows = (int) mysql_num_rows(res_set);
         int numcol = (int) mysql_num_fields(res_set);
@@ -610,7 +610,7 @@ vector<MYSQL_ROW> printEnrolledCourses() {
             }
             cout << endl;
         }
-        cout << "	----------------------------------------------------------------------------------------------" << endl;
+        cout << "	-------------------------------------------------------------------------------------------" << endl;
         mysql_free_result(res_set);
     } else {
         cout << "->Error :Enrolled Course list query Failed. Error Number:"<< mysql_errno(connection) << ": " << mysql_error(connection) << endl;
@@ -646,7 +646,7 @@ int withdrawScreen() {
         if (selection == 0) {
             return 0;
         } else if (selection > enrolledCourses.size()){
-            cout << "->Invalid option number, please retry!";
+            cout << "->Invalid option number, please retry!" << endl << endl;
             continue;
         } else {
             selection --;
@@ -675,7 +675,7 @@ int withdrawScreen() {
         int message;
     
         if (row[0] == NULL) {
-            cout << "The withdraw procedure is wrong\n";
+            cout << "The withdraw procedure is wrong." << endl;
         }
         else {
             message = atoi(row[0]);
@@ -789,8 +789,10 @@ void updatePasswork () {
         cin >> reEnterPass;
         
         if (newPass.compare(reEnterPass) != 0) {
-            cout << "Two inputs are not same please try again." << endl << endl;
+            cout << "->Warning: Two inputs are not same please try again." << endl << endl;
             continue;
+        } else if (newPass.length() > 10 || newPass.length() == 0) {
+            cout << "->Warning: The length of address should be 1~10 characters." << endl << endl;
         } else {
             break;
         }
@@ -805,8 +807,16 @@ void updatePasswork () {
 
 void updateAddress () {
     string newAddr;
-    cout << "->Please enter new address: ";
-    cin >> newAddr;
+    while (true) {
+        cout << "->Please enter new address: ";
+        cin >> newAddr;
+        
+        if (newAddr.length() > 50 || newAddr.length() == 0) {
+            cout << "->Warning: The length of address should be 1~50 characters." << endl << endl;
+        } else {
+            break;
+        }
+    }
     
     char updateQuery[200];
     sprintf(updateQuery, "update student set Address = \"%s\" where Id = %d; ", newAddr.c_str(), user.id);
