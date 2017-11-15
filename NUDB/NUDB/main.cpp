@@ -37,6 +37,7 @@ void printWelcome();
 void init();
 void getDate();
 int getCommand();
+int getNumber();
 int login();
 void printMenu();
 int transciptScreen();
@@ -63,6 +64,7 @@ int main (int argc, const char* argv[]) {
             cout << "Good bye!" << endl;
             exit(0);
         } else if (cmd != 0 && cmd != 1) {
+            cout << "->Warning: Please input number from operation list." << endl << endl;
             continue;
         }
         
@@ -162,18 +164,65 @@ void getDate() {
 }
 
 int getCommand() {
-    cout << "->Please Enter a command number: ";
-    int option;
-    cin >> option;
-    while (cin.fail()) {
-        cin.clear();
-        cin.ignore(INT_MAX, '\n');
-        cout << "->Warning: You can only enter numbers, please retry." << endl << endl;
+    string input;
+    bool isValid = false;;
+    while (!isValid) {
+        isValid = true;
         cout << "->Please Enter a command number: ";
-        cin >> option;
+        cin >> input;
+        
+        char cArray[sizeof(input) - 1];
+        strncpy(cArray, input.c_str(), sizeof(input) - 1);
+        
+        for (char c: cArray) {
+            if (c == '\0')
+                continue;
+            if (c < '0' || c > '9') {
+                isValid = false;
+                break;
+            }
+        }
+        
+        if (cin.fail() || !cin || !isValid) {
+            cin.clear();
+            cin.ignore(INT_MAX, '\n');
+            cout << "->Warning: Invalid Input, please retry." << endl << endl;
+            continue;
+        }
     }
     cout << endl;
-    return option;
+    return atoi(input.c_str());
+}
+
+int getNumber(string printInfo, string errorInfo) {
+    string input;
+    bool isValid = false;
+    while (!isValid) {
+        isValid = true;
+        cout <<printInfo;
+        cin >> input;
+        
+        char cArray[sizeof(input) - 1];
+        strncpy(cArray, input.c_str(), sizeof(input) - 1);
+        
+        for (char c: cArray) {
+            if (c == '\0')
+                continue;
+            if (c < '0' || c > '9') {
+                isValid = false;
+                break;
+            }
+        }
+        
+        if (cin.fail() || !cin || !isValid) {
+            cin.clear();
+            cin.ignore(INT_MAX, '\n');
+            cout << errorInfo << endl << endl;
+            continue;
+        }
+    }
+    cout << endl;
+    return atoi(input.c_str());
 }
 
 int login() {
@@ -183,45 +232,59 @@ int login() {
     char idQuery[100];
     
     while (true) {
-        cout << "->Please Enter your user ID: ";
-        cin >> user.id;
+        user.id = getNumber("->Please Enter your user ID (Enter 0 to Exit): ", "->Warning: Invalid ID!");
+        
+        if (user.id == 0)
+            return 0;
+        
         sprintf(idQuery, "SELECT * FROM student WHERE Id = %d; ", user.id);
         
         if (mysql_query(connection, idQuery) == 0) {
             res_set = mysql_store_result(connection);
             int numrows = (int) mysql_num_rows(res_set);
             if (numrows < 1) {
-                cout << "->Warning: Invalid ID!" << endl;
+                cout << "->Warning: Invalid ID or ID not exists!" << endl;
                 cout << "  [1]Retry" << endl;
                 cout << "  [0]EXIT" << endl << endl;
                 
                 int cmd = getCommand();
                 if (cmd == 1) {
                     continue;
-                } else {
+                } else if (cmd == 0){
                     return 0;
+                } else {
+                    cout << "->Warning: Please input number from operation list." << endl << endl;
+                    continue;
                 }
             } else {
+                bool isRetry = false;
                 row = mysql_fetch_row(res_set);
                 while (true) {
                     cout << "->Please enter your password: ";
                     cin >> user.password;
+                    cin.ignore(INT_MAX, '\n');
                     
                     if (user.password.compare(row[2]) != 0) {
-                        cout << "->Warning: Wrong password!" << endl;
+                        cout << "->Warning: Wrong ID or password!" << endl;
                         cout << "  [1]Retry" << endl;
                         cout << "  [0]Exit" << endl << endl;
                         int cmd = getCommand();
                         if (cmd == 1) {
-                            continue;
-                        } else {
+                            isRetry = true;
+                            break;
+                        } else if (cmd == 0) {
                             return 0;
+                        } else {
+                            cout << "->Warning: Please input number from operation list." << endl << endl;
+                            continue;
                         }
                     } else {
                         mysql_free_result(res_set);
                         return 1;
                     }
                 }
+                if (isRetry)
+                    continue;
             }
         } else {
             return -1;
@@ -327,6 +390,9 @@ int transciptScreen() {
             courseDetail();
         } else if (cmd == 0) {
             break;
+        } else {
+            cout << "->Warning: Please input number from operation list." << endl << endl;
+            continue;
         }
     }
     return 0;
@@ -343,6 +409,7 @@ int courseDetail() {
     while (true) {
         cout << "->Please enter a course ID: ";
         cin >> courseId;
+        cin.ignore(INT_MAX, '\n');
         
         sprintf(courseQuery, "select T.UoSCode as CourseID,US.UoSName as CourseName,T.Semester as Semester,T.Year as Year,UO.Enrollment as StudentEnrollment, UO.MaxEnrollment as MaxStudentEnrollment, F.Name as InstructerName, T.Grade as Grade from transcript T, unitofstudy US, uosoffering UO, faculty F where T.UoSCode = US.UoSCode and UO.UoSCode = T.UoSCode and F.Id = UO.InstructorId and T.Year = UO.Year and T.Semester = UO.Semester and StudId = %d and T.UoSCode = \'%s\'; ", user.id, courseId.c_str());
         
@@ -477,8 +544,7 @@ int enrollScreen() {
     
     int selection;
     while (true) {
-        cout << "->Please enter the option number to enroll (Enter 0 to Exit): ";
-        cin >> selection;
+        selection = getNumber("->Please enter the option number to enroll (Enter 0 to Exit): ", "->Invalid option number, please retry!");
         if (selection == 0) {
             return 0;
         } else if (selection > validCourses.size()){
@@ -640,8 +706,7 @@ int withdrawScreen() {
     
     int selection;
     while (true) {
-        cout << "->Please enter the option number to withdraw (Enter 0 to Exit): ";
-        cin >> selection;
+        selection = getNumber("->Please enter the option number to withdraw (Enter 0 to Exit): ", "->Invalid option number, please retry!");
         
         if (selection == 0) {
             return 0;
@@ -785,14 +850,20 @@ void updatePasswork () {
     while (true) {
         cout << "->Please enter new passward: ";
         cin >> newPass;
+        cin.ignore(INT_MAX, '\n');
+        
+        if (newPass.length() > 10 || newPass.length() == 0) {
+            cout << "->Warning: The length of address should be 1~10 characters." << endl << endl;
+            continue;
+        }
+        
         cout << "->Please re-enter your new password: ";
         cin >> reEnterPass;
+        cin.ignore(INT_MAX, '\n');
         
         if (newPass.compare(reEnterPass) != 0) {
             cout << "->Warning: Two inputs are not same please try again." << endl << endl;
             continue;
-        } else if (newPass.length() > 10 || newPass.length() == 0) {
-            cout << "->Warning: The length of address should be 1~10 characters." << endl << endl;
         } else {
             break;
         }
@@ -810,6 +881,7 @@ void updateAddress () {
     while (true) {
         cout << "->Please enter new address: ";
         cin >> newAddr;
+        cin.ignore(INT_MAX, '\n');
         
         if (newAddr.length() > 50 || newAddr.length() == 0) {
             cout << "->Warning: The length of address should be 1~50 characters." << endl << endl;
