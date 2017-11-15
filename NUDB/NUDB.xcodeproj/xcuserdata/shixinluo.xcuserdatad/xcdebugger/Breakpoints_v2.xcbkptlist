@@ -6,16 +6,16 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            shouldBeEnabled = "No"
+            shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "NUDB/main.cpp"
-            timestampString = "531812021.881001"
+            timestampString = "532421377.804818"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "497"
-            endingLineNumber = "497"
-            landmarkName = "enrollScreen()"
+            startingLineNumber = "99"
+            endingLineNumber = "99"
+            landmarkName = "main (int argc, const char* argv[])"
             landmarkType = "9">
          </BreakpointContent>
       </BreakpointProxy>
