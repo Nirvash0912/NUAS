@@ -11,8 +11,7 @@
 #include <string>
 #include <ctime>
 #include <iomanip>
-#include <stdio.h>
-#include <limits>
+//#include <limits>
 #include <vector>
 
 using namespace std;
@@ -70,7 +69,7 @@ int main (int argc, const char* argv[]) {
         
         switch (login()) {
             case -1: {
-                cout << "->Error: Query failed. Error Number:" << mysql_errno(connection) << ": " << mysql_error(connection) << endl;
+                cout << "->Error: Query failed. Error Number:" << mysql_errno(connection) << ": " << mysql_error(connection) << endl << endl;
                 continue;
             }
             case 0: {
@@ -114,7 +113,7 @@ void init() {
     connection = mysql_real_connect(&mysql, "localhost", "root", "123456", "project3-nudb", 3306, NULL, CLIENT_MULTI_RESULTS);
     if (connection == NULL) {
         // unable to connect
-        cout << "Fatal Error: Failed to conncet to DB. Error Number:" << mysql_errno(connection) << ": " << mysql_error(connection) << endl;
+        cout << "Fatal Error: Failed to conncet to DB. Error Number:" << mysql_errno(connection) << ": " << mysql_error(connection) << endl << endl;
         exit(1);
     }
     cout << "Connection Built." << endl;
@@ -312,7 +311,7 @@ void printMenu() {
     
     char courseQuery[300];
     sprintf(courseQuery,
-            "select u.UoSCode, u.UoSName from transcript T, unitofstudy u where T.UoSCode = u.UoSCode and T.studId = %d and T.Semester = \'%s\' and T.Year = %d and T.grade is null", user.id, dt.quarter.c_str(), dt.year);
+            "select u.UoSCode, u.UoSName from transcript T, unitofstudy u where T.UoSCode = u.UoSCode and T.studId = %d and T.Semester = \'%s\' and T.Year = %d", user.id, dt.quarter.c_str(), dt.year);
     
     if (mysql_query(connection, courseQuery) == 0) {
         res_set = mysql_store_result(connection);
@@ -328,7 +327,7 @@ void printMenu() {
         }
     }
     else {
-        cout << "->Error :Course list query Failed. Error Number:"<< mysql_errno(connection) << ": " << mysql_error(connection) << endl;
+        cout << "->Error :Course list query Failed. Error Number:"<< mysql_errno(connection) << ": " << mysql_error(connection) << endl << endl;
     }
     cout << "  ----------------------------------------------------------------------------------------------------------" << endl;
     mysql_free_result(res_set);
@@ -376,7 +375,7 @@ int transciptScreen() {
         cout << "	-------------------------------------------------------------------------------------------" << endl << endl;
     }
     else {
-        cout << "->Error :Course list query Failed. Error Number:"<< mysql_errno(connection) << ": " << mysql_error(connection) << endl;
+        cout << "->Error :Course list query Failed. Error Number:"<< mysql_errno(connection) << ": " << mysql_error(connection) << endl << endl;
     }
     mysql_free_result(res_set);
     
@@ -387,7 +386,14 @@ int transciptScreen() {
 
         int cmd = getCommand();
         if (cmd == 1) {
-            courseDetail();
+            while (true) {
+                int ret = courseDetail();
+                if (ret == 0) {
+                    break;
+                } else if (ret == 1) {
+                    continue;
+                }
+            }
         } else if (cmd == 0) {
             break;
         } else {
@@ -418,17 +424,22 @@ int courseDetail() {
             int numrows = (int) mysql_num_rows(res_set);
             
             if (numrows < 1) {
-                cout << "->Can't find course with ID: " << courseId << endl;
-                cout << "    [1] Retry" << endl;
-                cout << "    [0] Exit" << endl << endl;
                 mysql_free_result(res_set);
+                while (true) {
+                    cout << "->Can't find course with ID: " << courseId << endl;
+                    cout << "    [1] Retry" << endl;
+                    cout << "    [0] Exit" << endl << endl;
                 
-                int cmd = getCommand();
+                    int cmd = getCommand();
                 
-                if (cmd == 1) {
-                    continue;
-                } else if (cmd == 0) {
-                    return 0;
+                    if (cmd == 1) {
+                        return 1;
+                    } else if (cmd == 0) {
+                        return 0;
+                    } else {
+                        cout << "->Warning: Please input number from operation list." << endl << endl;
+                        continue;
+                    }
                 }
             } else {
                 for (int i = 0; i < numrows; i++) {
@@ -443,7 +454,7 @@ int courseDetail() {
                         cout << "				Course Name: " << row[1] << endl;
                         cout << "				Semester: " << row[2] << endl;
                         cout << "				Year: " << row[3] << endl;
-                        cout << "				Student Enrolled in this class: " << row[4] << endl;
+                        cout << "				Number of Students in the class: " << row[4] << endl;
                         cout << "				Maximum Enrollment: " <<row[5] << endl;
                         cout << "				Instructer Name: " << row[6] << endl;
                         if (row[7] == NULL) {
@@ -517,7 +528,7 @@ vector<MYSQL_ROW> printValidCourses() {
         mysql_free_result(res_set);
     }
     else {
-        cout << "->Error :Course list query Failed. Error Number:"<< mysql_errno(connection) << ": " << mysql_error(connection) << endl;
+        cout << "->Error :Course list query Failed. Error Number:"<< mysql_errno(connection) << ": " << mysql_error(connection) << endl << endl;
     }
     
     return validCourses;
@@ -538,6 +549,9 @@ int enrollScreen() {
             int cmd = getCommand();
             if (cmd == 0) {
                 return 0;
+            } else {
+                cout << "->Warning: Please input number from operation list." << endl << endl;
+                continue;
             }
         }
     }
@@ -580,11 +594,11 @@ int enrollScreen() {
         if (row[0] != NULL) {
             message = atoi(row[0]);
             if (message == 1) {
-                cout << "->Warning: The coure is filled up." << endl;
+                cout << "->Warning: The coure is filled up." << endl << endl;
             }
             else if (message == 2) {
                 cout << "->Warning: The pre-requisite is not satisfied." << endl;
-                cout << "->Course(s) should be taken:" << endl;
+                cout << "->Course(s) should have been taken and passed:" << endl;
                 
                 char courseQuery[300];
                 sprintf(courseQuery, "SELECT uoscode, uosname FROM unitofstudy WHERE uoscode IN (SELECT r.prereqUosCode FROM requires AS r WHERE r.uoscode = \"%s\");", courseId.c_str());
@@ -600,33 +614,38 @@ int enrollScreen() {
                     cout << endl;
                     mysql_free_result(res_set);
                 } else {
-                    cout << "->Error :Course list query Failed. Error Number:"<< mysql_errno(connection) << ": " << mysql_error(connection) << endl;
+                    cout << "->Error :Course list query Failed. Error Number:"<< mysql_errno(connection) << ": " << mysql_error(connection) << endl << endl;
                 }
                 
             }
             else if (message == 3) {
-                cout << "->Warning: The course has already been taken." << endl;
+                cout << "->Warning: The course has already been taken." << endl << endl;
             }
             else if (message == 4) {
-                cout << "->Enrollment succeed." << endl;
+                cout << "->Enrollment succeed." << endl << endl;
                 
                 checkWarning(courseId);
             }
+        } else {
+            cout << "->Error: Enroll procedure failed without any return." << endl << endl;
         }
     } else {
-        cout << "->Error :Enroll Procedure Failed. Error Number:"<< mysql_errno(connection) << ": " << mysql_error(connection) << endl;
+        cout << "->Error :Enroll Procedure Failed. Error Number:"<< mysql_errno(connection) << ": " << mysql_error(connection) << endl << endl;
     }
     
-    cout << "->Operations:" << endl;
-    cout << "    [1] Continue to enroll others" << endl;
-    cout << "    [0] Return to Student Menu" << endl << endl;
-
     while (true) {
+        cout << "->Operations:" << endl;
+        cout << "    [1] Continue to enroll others" << endl;
+        cout << "    [0] Return to Student Menu" << endl << endl;
+    
         int cmd = getCommand();
         if (cmd == 0) {
             break;
         } else if (cmd == 1) {
             return 1;
+        } else {
+            cout << "->Warning: Please input number from operation list." << endl << endl;
+            continue;
         }
     }
 
@@ -679,7 +698,7 @@ vector<MYSQL_ROW> printEnrolledCourses() {
         cout << "	-------------------------------------------------------------------------------------------" << endl;
         mysql_free_result(res_set);
     } else {
-        cout << "->Error :Enrolled Course list query Failed. Error Number:"<< mysql_errno(connection) << ": " << mysql_error(connection) << endl;
+        cout << "->Error :Enrolled Course list query Failed. Error Number:"<< mysql_errno(connection) << ": " << mysql_error(connection) << endl << endl;
     }
     
     return enrolledCourses;
@@ -700,6 +719,9 @@ int withdrawScreen() {
             int cmd = getCommand();
             if (cmd == 0) {
                 return 0;
+            } else {
+                cout << "->Warning: Please input number from operation list." << endl << endl;
+                continue;
             }
         }
     }
@@ -740,37 +762,39 @@ int withdrawScreen() {
         int message;
     
         if (row[0] == NULL) {
-            cout << "The withdraw procedure is wrong." << endl;
+            cout << "->Error: Withdraw procedure failed without any return." << endl << endl;
         }
         else {
             message = atoi(row[0]);
             if (message == 1) {
-                cout << "->Warning: The course is not enrolled." << endl;
+                cout << "->Warning: The course is not enrolled." << endl << endl;
             }
             else if (message == 2) {
-                cout << "->Warning: Completed course can't be withdrawn." << endl;
+                cout << "->Warning: Completed course can't be withdrawn." << endl << endl;
             }
             else if (message == 3) {
-                cout << "->Withdraw succeed." << endl;
-            
+                cout << "->Withdraw succeed." << endl << endl;
                 checkWarning(courseId);
             }
         }
     } else {
-        cout << "->Error :Withdraw Procedure Failed. Error Number:"<< mysql_errno(connection) << ": " << mysql_error(connection) << endl;
+        cout << "->Error :Withdraw Procedure Failed. Error Number:"<< mysql_errno(connection) << ": " << mysql_error(connection) << endl << endl;
         return -1;
     }
     
-    cout << "->Operations:" << endl;
-    cout << "    [1] Continue to withdraw others" << endl;
-    cout << "    [0] Return to Student Menu" << endl << endl;
-    
     while (true) {
+        cout << "->Operations:" << endl;
+        cout << "    [1] Continue to withdraw others" << endl;
+        cout << "    [0] Return to Student Menu" << endl << endl;
+        
         int cmd = getCommand();
         if (cmd == 0) {
             break;
         } else if (cmd == 1) {
             return 1;
+        } else {
+            cout << "->Warning: Please input number from operation list." << endl << endl;
+            continue;
         }
     }
     
@@ -787,11 +811,11 @@ void checkWarning(string courseId) {
         row = mysql_fetch_row(res_set);
         
         if (numrows != 0) {
-            cout << "-->Warning: Student number enrolled in course: [" << courseId << "] " << " is lower than 50% of Max Enrollment!" << endl;
+            cout << "->Warning: Student number enrolled in course: [" << courseId << "] " << " is lower than 50% of Max Enrollment!" << endl << endl;
         }
         mysql_free_result(res_set);
     } else {
-        cout << "->Error :Warning query Failed. Error Number:"<< mysql_errno(connection) << ": " << mysql_error(connection) << endl;
+        cout << "->Error :Warning query Failed. Error Number:"<< mysql_errno(connection) << ": " << mysql_error(connection) << endl << endl;
     }
 }
 
@@ -818,14 +842,13 @@ int personalDetail() {
     }
     mysql_free_result(res_set);
     cout << endl;
-    
     while (true) {
-        bool isExit = false;
         cout << "->Operations:" << endl;
         cout << "    [1] Change password" << endl;
         cout << "    [2] Change Address" << endl;
         cout << "    [0] Exit" << endl << endl;
-        
+    
+        bool isExit = false;
         int cmd = getCommand();
         switch (cmd) {
             case 1:
@@ -836,6 +859,9 @@ int personalDetail() {
                 break;
             case 0:
                 isExit = true;
+                break;
+            default:
+                cout << "->Warning: Please input number from operation list." << endl << endl;
                 break;
         }
         if (isExit)
@@ -872,7 +898,9 @@ void updatePasswork () {
     char updateQuery[200];
     sprintf(updateQuery, "update student set Password = \"%s\" where Id = %d; ", newPass.c_str(), user.id);
     if (mysql_query(connection, updateQuery) != 0) {
-        cout << "->Error: Query failed. Error Number:" << mysql_errno(connection) << ": " << mysql_error(connection) << endl;
+        cout << "->Error: Query failed. Error Number:" << mysql_errno(connection) << ": " << mysql_error(connection) << endl << endl;
+    } else {
+        cout << endl << "->Password change succeed." << endl << endl;
     }
 }
 
@@ -893,6 +921,8 @@ void updateAddress () {
     char updateQuery[200];
     sprintf(updateQuery, "update student set Address = \"%s\" where Id = %d; ", newAddr.c_str(), user.id);
     if (mysql_query(connection, updateQuery) != 0) {
-        cout << "->Error: Update failed. Error Number:" << mysql_errno(connection) << ": " << mysql_error(connection) << endl;
+        cout << "->Error: Update failed. Error Number:" << mysql_errno(connection) << ": " << mysql_error(connection) << endl << endl;
+    } else {
+        cout << endl << "->Address change succeed." << endl << endl;
     }
 }
